@@ -1,11 +1,13 @@
 name: Prakiraan Cuaca Harian Otomatis
 
+# Kunci 'on:' harus sejajar dengan 'name:'
 on:
-  # Trigger otomatis terjadwal (Setiap hari pukul 06:15 WIB / 23:15 UTC)
+  # Kunci 'schedule:' harus diindentasi 2 spasi di bawah 'on:'
   schedule:
+    # Item daftar (hyphen) harus diindentasi 4 spasi
     - cron: '15 23 * * *'  
-    
-  # Trigger manual
+
+  # Kunci 'workflow_dispatch:' harus diindentasi 2 spasi, sejajar dengan 'schedule:'
   workflow_dispatch:         
 
 jobs:
@@ -15,24 +17,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
+        
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-
+          
       - name: Install dependencies
         run: pip install -r requirements.txt
-
+        
       - name: Jalankan skrip prakiraan dan Kirim Email
-        # MEMANGGIL SKRIP PYTHON
+        # Catatan: Saya mengasumsikan nama skrip Python Anda adalah 'main.py' berdasarkan kode yang Anda berikan.
         run: python main.py
         env:
-          # Meneruskan GitHub Secrets
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-
+          
       - name: Commit hasil gambar ke repository
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
