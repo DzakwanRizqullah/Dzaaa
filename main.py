@@ -1,6 +1,6 @@
 #====================================================================================================================#
 #                                      Script Created By Penelitian ITMK 2022 K                                      #
-#                      (FIX FINAL: PORTABLE PATH, FONT SIZE RAPI, HANYA DATA NUMERIK + IKON CUACA)                   #
+#      (FIX FINAL: ABSOLUTE PATH D: DIPERTAHANKAN, FONT SIZE 34, HANYA DATA NUMERIK + IKON CUACA DENGAN SATUAN)       #
 #====================================================================================================================#
 
 import requests
@@ -8,8 +8,6 @@ import csv
 import os
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
-from email.mime.base import MIMEBase
-from email import encoders
 
 # Modul tambahan untuk email
 import smtplib
@@ -18,35 +16,24 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from datetime import datetime
+from email.mime.base import MIMEBase
+from email import encoders
 
 # ====================================================================================================
-# KONFIGURASI PATH GLOBAL (PORTABEL/RELATIF)
-# Dibuat relatif terhadap lokasi skrip dijalankan (os.getcwd())
+# KONFIGURASI PATH GLOBAL (ABSOLUTE PATH D:)
 # ====================================================================================================
 
-# Folder output utama: [Lokasi Skrip]/output
-output_dir = os.path.join(os.getcwd(), "output") 
-
-icon_dir = os.path.join(output_dir, "ikon_cuaca") 
+# Path Absolute yang Dipertahankan (Sesuai Permintaan)
+output_dir = r"D:\Prakiraan_Cuaca_STMKG" 
+icon_dir = os.path.join(output_dir, "ikon_cuaca") # D:\Prakiraan_Cuaca_STMKG\ikon_cuaca
 csv_path = os.path.join(output_dir, "prakiraan_cuaca.csv")
-
-# Path file gambar hasil akhir (di dalam folder output)
-output_gambar_path = os.path.join(output_dir, "PrakicuITM.png") 
-
-# Path untuk template (di dalam folder output)
-# ASUMSI: File template '3.png' dan 'ikon_arah_angin.png' juga berada di folder 'output'.
-template_path = os.path.join(output_dir, "3.png") 
-ikon_arah_path = os.path.join(output_dir, "ikon_arah_angin.png") 
-
-# **KONFIGURASI FONT SIZE**
-FONT_SIZE_DATA = 34 # Ukuran font untuk data utama di tabel
-FONT_SIZE_HEADER_SMALL = 30 # Ukuran font untuk header kecil
-FONT_SIZE_HEADER_DATE = 34 # Ukuran font untuk tanggal/jam di header
-FONT_SIZE_TITLE = 50 # Ukuran font untuk judul "Prakiraan Cuaca STMKG"
-FONT_SIZE_FOOTER = 30 # Ukuran font untuk "Sumber: BMKG"
+template_path = os.path.join(output_dir, "3.png") # Template 3.png diasumsikan di sini
+ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") # Ikon arah angin diasumsikan di folder ikon_cuaca
+output_gambar_path = r"D:\Prakicu\PrakicuITM.png" # Path output gambar akhir
 
 # ====================================================================================================
-# BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON 
+# BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON
+# (Tidak Ada Perubahan Logika)
 # ====================================================================================================
 
 print("--- Memulai Pengambilan Data BMKG ---")
@@ -70,6 +57,7 @@ except requests.exceptions.RequestException as e:
 # Buat folder output
 os.makedirs(output_dir, exist_ok=True)
 os.makedirs(icon_dir, exist_ok=True)
+os.makedirs(os.path.dirname(output_gambar_path), exist_ok=True) # Pastikan D:\Prakicu ada
 
 # Fungsi konversi km/j ke knots
 def kmh_to_knots(kmh):
@@ -80,7 +68,7 @@ def kmh_to_knots(kmh):
     except:
         return ""
 
-# Siapkan file CSV (hanya jika pengambilan data berhasil)
+# Siapkan file CSV
 if fetch_success:
     with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.writer(csvfile)
@@ -131,10 +119,13 @@ if fetch_success:
                 ])
 
     print(f"\n✅ File prakiraan_cuaca.csv berhasil dibuat di: {csv_path}")
-
+else:
+    # Exit jika gagal fetch dan tidak ada data CSV lama (opsional)
+    if not os.path.exists(csv_path):
+        exit()
 
 # ====================================================================================================
-# BAGIAN 2: PEMBUATAN GAMBAR INFOGRAFIS DARI DATA CSV (PENYESUAIAN DATA & ALIGNMENT)
+# BAGIAN 2: PEMBUATAN GAMBAR INFOGRAFIS DARI DATA CSV (KOREKSI PLOTTING)
 # ====================================================================================================
 
 print("\n--- Memulai Pembuatan Gambar Infografis ---")
@@ -144,11 +135,9 @@ try:
     df = pd.read_csv(file_path)
 except Exception as e:
     print(f"❌ Gagal membaca file CSV untuk pembuatan gambar: {e}")
-    # Gunakan exit() hanya jika skrip tidak dapat dilanjutkan, tetapi karena ada
-    # bagian email di bawah, biarkan skrip berjalan sebentar.
-    # exit() 
+    exit()
 
-# Fungsi ambil nilai
+# Fungsi ambil nilai (dipertahankan)
 def ambil_nilai(df, baris, kolom):
     try:
         if kolom not in df.columns: return ""
@@ -158,11 +147,11 @@ def ambil_nilai(df, baris, kolom):
     except Exception:
         return ""
 
-# Fungsi paste ikon arah angin (centered & tidak dibulatkan)
+# Fungsi paste ikon arah angin (centered & tidak dibulatkan) (dipertahankan)
 def paste_rotated_icon(base_img, icon_path, center_position, angle):
     if os.path.exists(icon_path):
         try:
-            ikon_img = Image.open(icon_path).convert("RGBA").resize((60, 60))  
+            ikon_img = Image.open(icon_path).convert("RGBA").resize((60, 60)) 
             ikon_img_rotated = ikon_img.rotate(-angle, expand=True, resample=Image.BICUBIC) 
             icon_w, icon_h = ikon_img_rotated.size
             center_x, center_y = center_position
@@ -172,18 +161,20 @@ def paste_rotated_icon(base_img, icon_path, center_position, angle):
         except Exception:
             pass
 
-# Fungsi paste ikon cuaca
-def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=100): 
+# Fungsi paste ikon cuaca (dipertahankan, width disesuaikan)
+def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=100):
     ikon_filename = os.path.splitext(ikon_filename)[0] + ".png"
     ikon_path = os.path.join(ikon_dir, ikon_filename)
 
     if os.path.exists(ikon_path):
         try:
             ikon_img = Image.open(ikon_path).convert("RGBA")
-            # Ukuran disesuaikan agar proporsional dengan font 34
-            target_width = 120 if "hujan" in ikon_filename.lower() else default_width 
-            offset_x = -15 if "hujan" in ikon_filename.lower() else 0
-            offset_y = -10 if "hujan" in ikon_filename.lower() else 0
+            # Width disesuaikan agar proporsional dengan font 34 (misal: 110px)
+            target_width = 110 
+            
+            # Offset untuk koreksi visual (opsional)
+            offset_x = -5 
+            offset_y = 0 
             
             scale_ratio = target_width / ikon_img.width
             target_height = int(ikon_img.height * scale_ratio)
@@ -196,44 +187,41 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
 
 # Siapkan gambar & font
 if not os.path.exists(template_path):
-    print(f"❌ File template gambar '3.png' tidak ditemukan. Dicari di: {template_path}. Tidak bisa membuat gambar.")
+    print(f"❌ File template gambar '3.png' tidak ditemukan di {template_path}. Tidak bisa membuat gambar.")
     exit()
     
 try:
     img = Image.open(template_path).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    # Menggunakan Bahnschrift jika ada, fallback ke default Pillow
     font_path = "C:/Windows/Fonts/Bahnschrift.ttf"
-    
-    font_data = ImageFont.truetype(font_path, FONT_SIZE_DATA) if os.path.exists(font_path) else ImageFont.load_default(size=FONT_SIZE_DATA)
-    font_header_small = ImageFont.truetype(font_path, FONT_SIZE_HEADER_SMALL) if os.path.exists(font_path) else ImageFont.load_default(size=FONT_SIZE_HEADER_SMALL)
-    font_header_date = ImageFont.truetype(font_path, FONT_SIZE_HEADER_DATE) if os.path.exists(font_path) else ImageFont.load_default(size=FONT_SIZE_HEADER_DATE)
-    font_title = ImageFont.truetype(font_path, FONT_SIZE_TITLE) if os.path.exists(font_path) else ImageFont.load_default(size=FONT_SIZE_TITLE)
-    font_footer = ImageFont.truetype(font_path, FONT_SIZE_FOOTER) if os.path.exists(font_path) else ImageFont.load_default(size=FONT_SIZE_FOOTER)
+    # FONT SIZE DIPERTAHANKAN 34 UNTUK SEMUA DATA, SESUAI PERMINTAAN AWAL
+    font_data = ImageFont.truetype(font_path, 34) if os.path.exists(font_path) else ImageFont.load_default(size=34)
 
+    # Path ikon arah angin dikoreksi ke folder ikon_cuaca
+    # ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") 
+    # ^ Diubah untuk konsistensi dengan variabel global di atas:
+    # ikon_arah_path = os.path.join(output_dir, "ikon_arah_angin.png") # ASUMSI: ikon_arah_angin.png ada di folder D:\Prakiraan_Cuaca_STMKG\ikon_cuaca
 except Exception as e:
     print(f"❌ Gagal memuat template gambar/font: {e}")
     exit()
 
-# Data posisi dan perbaikan koordinat Y untuk Font 34
-TEXT_VERTICAL_OFFSET = 30 # Offset Y untuk teks agar di tengah baris (untuk font 34)
-ICON_VERTICAL_OFFSET = 15 # Offset Y untuk ikon agar di tengah baris (untuk ikon cuaca/arah angin)
 
-# Catatan: Koordinat Y di bawah telah disesuaikan dengan template 3.png
-data_positions = [
-    # Teks header statis
-    {"x": 150, "y": 145, "text": "Ikatan Taruna Meteorologi", "font": font_header_small},
-    {"x": 150, "y": 185, "text": "Sekolah Tinggi Meteorologi Klimatologi dan Geofisika", "font": font_header_small},
-    {"x": 150, "y": 240, "text": "Prakiraan Cuaca STMKG", "font": font_title}, 
-    {"x": 480, "y": 300, "text": "Berlaku", "font": font_header_small}, 
+# *** KOREKSI POSISI DATA INFOGRAFIS ***
+# OFFSET Y diperkirakan untuk font 34 agar rapi di tengah baris
+TEXT_VERTICAL_OFFSET = 30 
+ICON_VERTICAL_OFFSET = 15 
 
-    # Tanggal dan Jam di bagian "Dari" dan "Sampai"
-    {"x": 150, "y": 360, "text_prefix": "Dari : ", "cell": (0, "Tanggal"), "cell_jam": (0, "Jam"), "font": font_header_date},
-    {"x": 650, "y": 360, "text_prefix": "Sampai : ", "cell": (8, "Tanggal"), "cell_jam": (8, "Jam"), "font": font_header_date},
-
-    # === DATA UTAMA DALAM TABEL (Y disesuaikan ke offset 30/15) ===
-    # Waktu (Jam) - Tetap Dipertahankan
+# Data posisi BARU (hanya data yang diminta + satuan)
+data_positions_revised = [
+    # Header TANGGAL/JAM (diasumsikan menggunakan font 34 juga)
+    # Catatan: Posisi Y di sini (390) adalah dari skrip Anda, dan teksnya rapi.
+    {"x": 150, "y": 390, "cell": (0, "Tanggal"), "font": font_data},
+    {"x": 350, "y": 390, "cell": (0, "Jam"), "font": font_data},
+    {"x": 730, "y": 390, "cell": (8, "Tanggal"), "font": font_data},
+    {"x": 930, "y": 390, "cell": (8, "Jam"), "font": font_data},
+    
+    # Waktu (Jam) - Kolom 1
     {"x": 150, "y": 795 + TEXT_VERTICAL_OFFSET, "cell": (0, "Jam"), "font": font_data},
     {"x": 150, "y": 895 + TEXT_VERTICAL_OFFSET, "cell": (1, "Jam"), "font": font_data},
     {"x": 150, "y": 990 + TEXT_VERTICAL_OFFSET, "cell": (2, "Jam"), "font": font_data},
@@ -243,7 +231,18 @@ data_positions = [
     {"x": 150, "y": 1380 + TEXT_VERTICAL_OFFSET, "cell": (6, "Jam"), "font": font_data},
     {"x": 150, "y": 1480 + TEXT_VERTICAL_OFFSET, "cell": (7, "Jam"), "font": font_data},
 
-    # Suhu (°C) - HANYA ANGKA + SUFFIX
+    # Ikon Cuaca - Kolom 2 (Kiri)
+    # X dikoreksi ke 305 agar ikon lebih sentral
+    {"x": 305, "y": 795 + ICON_VERTICAL_OFFSET, "cell": (0, "File Ikon"), "is_icon": True}, 
+    {"x": 305, "y": 895 + ICON_VERTICAL_OFFSET, "cell": (1, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 990 + ICON_VERTICAL_OFFSET, "cell": (2, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 1090 + ICON_VERTICAL_OFFSET, "cell": (3, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 1185 + ICON_VERTICAL_OFFSET, "cell": (4, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 1285 + ICON_VERTICAL_OFFSET, "cell": (5, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 1380 + ICON_VERTICAL_OFFSET, "cell": (6, "File Ikon"), "is_icon": True},
+    {"x": 305, "y": 1480 + ICON_VERTICAL_OFFSET, "cell": (7, "File Ikon"), "is_icon": True},
+
+    # Suhu (°C) - Kolom 3
     {"x": 450, "y": 795 + TEXT_VERTICAL_OFFSET, "cell": (0, "Suhu (°C)"), "font": font_data, "suffix": "°C"}, 
     {"x": 450, "y": 895 + TEXT_VERTICAL_OFFSET, "cell": (1, "Suhu (°C)"), "font": font_data, "suffix": "°C"},
     {"x": 450, "y": 990 + TEXT_VERTICAL_OFFSET, "cell": (2, "Suhu (°C)"), "font": font_data, "suffix": "°C"},
@@ -253,7 +252,7 @@ data_positions = [
     {"x": 450, "y": 1380 + TEXT_VERTICAL_OFFSET, "cell": (6, "Suhu (°C)"), "font": font_data, "suffix": "°C"},
     {"x": 450, "y": 1480 + TEXT_VERTICAL_OFFSET, "cell": (7, "Suhu (°C)"), "font": font_data, "suffix": "°C"},
     
-    # Kelembapan (%) - HANYA ANGKA + SUFFIX
+    # Kelembapan (%) - Kolom 4
     {"x": 620, "y": 795 + TEXT_VERTICAL_OFFSET, "cell": (0, "Kelembapan (%)"), "font": font_data, "suffix": "%"},
     {"x": 620, "y": 895 + TEXT_VERTICAL_OFFSET, "cell": (1, "Kelembapan (%)"), "font": font_data, "suffix": "%"},
     {"x": 620, "y": 990 + TEXT_VERTICAL_OFFSET, "cell": (2, "Kelembapan (%)"), "font": font_data, "suffix": "%"},
@@ -263,75 +262,55 @@ data_positions = [
     {"x": 620, "y": 1380 + TEXT_VERTICAL_OFFSET, "cell": (6, "Kelembapan (%)"), "font": font_data, "suffix": "%"},
     {"x": 620, "y": 1480 + TEXT_VERTICAL_OFFSET, "cell": (7, "Kelembapan (%)"), "font": font_data, "suffix": "%"},
     
-    # Kecepatan Angin (knots) - HANYA ANGKA + SUFFIX (Ikon Arah Angin diplot secara terpisah)
-    {"x": 850, "y": 795 + TEXT_VERTICAL_OFFSET, "cell": (0, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"}, 
-    {"x": 850, "y": 895 + TEXT_VERTICAL_OFFSET, "cell": (1, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 990 + TEXT_VERTICAL_OFFSET, "cell": (2, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 1090 + TEXT_VERTICAL_OFFSET, "cell": (3, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 1185 + TEXT_VERTICAL_OFFSET, "cell": (4, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 1285 + TEXT_VERTICAL_OFFSET, "cell": (5, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 1380 + TEXT_VERTICAL_OFFSET, "cell": (6, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    {"x": 850, "y": 1480 + TEXT_VERTICAL_OFFSET, "cell": (7, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots"},
-    
-    # Ikon Cuaca - HANYA IKON
-    {"x": 300, "y": 795 + ICON_VERTICAL_OFFSET, "cell": (0, "File Ikon"), "is_icon": True}, 
-    {"x": 300, "y": 895 + ICON_VERTICAL_OFFSET, "cell": (1, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 990 + ICON_VERTICAL_OFFSET, "cell": (2, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 1090 + ICON_VERTICAL_OFFSET, "cell": (3, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 1185 + ICON_VERTICAL_OFFSET, "cell": (4, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 1285 + ICON_VERTICAL_OFFSET, "cell": (5, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 1380 + ICON_VERTICAL_OFFSET, "cell": (6, "File Ikon"), "is_icon": True},
-    {"x": 300, "y": 1480 + ICON_VERTICAL_OFFSET, "cell": (7, "File Ikon"), "is_icon": True},
-
-    # Teks Footer
-    {"x": 800, "y": 1650, "text": "Sumber : BMKG", "font": font_footer},
-    {"x": 780, "y": 1780, "text": "@itm_stmkg", "font": font_footer}, 
+    # Kecepatan Angin (knots) - Kolom 5
+    # Angka knots di plot lebih ke kanan (X=870) untuk memberi ruang pada ikon arah angin
+    {"x": 870, "y": 795 + TEXT_VERTICAL_OFFSET, "cell": (0, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True}, 
+    {"x": 870, "y": 895 + TEXT_VERTICAL_OFFSET, "cell": (1, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 990 + TEXT_VERTICAL_OFFSET, "cell": (2, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 1090 + TEXT_VERTICAL_OFFSET, "cell": (3, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 1185 + TEXT_VERTICAL_OFFSET, "cell": (4, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 1285 + TEXT_VERTICAL_OFFSET, "cell": (5, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 1380 + TEXT_VERTICAL_OFFSET, "cell": (6, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
+    {"x": 870, "y": 1480 + TEXT_VERTICAL_OFFSET, "cell": (7, "Kecepatan Angin (knots)"), "font": font_data, "suffix": " knots", "is_wind": True},
 ]
 
 # Plot
-for item in data_positions:
+for item in data_positions_revised:
     x, y = item["x"], item["y"]
     
-    # Untuk Teks Statis (Header/Footer)
-    if "text" in item:
-        text_content = item["text"]
-        current_font = item.get("font", font_data) 
-        draw.text((x, y), text_content, font=current_font, fill="white")
+    # Untuk Teks Statis (Header/Footer - TIDAK ADA DALAM LIST INI, ASUMSI SUDAH DI TEMPLATE)
+    # Anda bisa tambahkan jika perlu, contoh:
+    # draw.text((800, 1650), "Sumber : BMKG", font=font_data, fill="white")
     
     # Untuk Teks dari Data CSV
-    elif "cell" in item:
+    if "cell" in item:
         baris, kolom = item["cell"]
         teks = ambil_nilai(df, baris, kolom)
         current_font = item.get("font", font_data) 
 
-        if "text_prefix" in item: # Logika untuk "Dari" dan "Sampai"
-            teks_tanggal = ambil_nilai(df, item["cell"][0], "Tanggal")
-            teks_jam = ambil_nilai(df, item["cell_jam"][0], "Jam")
-            full_text = f"{item['text_prefix']} {teks_tanggal} {teks_jam}"
-            draw.text((x, y), full_text, font=current_font, fill="white")
-        
-        elif "File Ikon" not in kolom:
-            # Plot Angka + Suffix
+        # Plot Angka + Suffix (Suhu, Kelembaban, Kecepatan Angin)
+        if "File Ikon" not in kolom:
             suffix = item.get("suffix", "")
             if teks:
+                # Plot Teks dan Satuan
                 draw.text((x, y), teks + suffix, font=current_font, fill="white")
 
-            if "Kecepatan Angin" in kolom:
+            # Plot Ikon Arah Angin (Hanya jika ini kolom Kecepatan Angin)
+            if item.get("is_wind", False):
                 arah_angin = ambil_nilai(df, baris, "Arah Angin (°)")
                 try:
                     angle = float(arah_angin)
                     # Ikon arah angin diposisikan di sebelah kiri angka knots
-                    paste_rotated_icon(img, ikon_arah_path, (x - 80, y + 17), angle)
+                    paste_rotated_icon(img, ikon_arah_path, (x - 100, y + 17), angle) # X dikurangi 100 dari angka knots
                 except ValueError:
                     pass
 
+        # Plot Ikon Cuaca
         elif "File Ikon" in kolom:
-            # Ikon cuaca dipanggil
             paste_ikon_cuaca(img, icon_dir, (x, y), teks)
 
 
 # Simpan Gambar
-os.makedirs(os.path.dirname(output_gambar_path), exist_ok=True) 
 try:
     img.save(output_gambar_path)
     print(f"\n✅ Gambar prakiraan selesai dan disimpan di: {output_gambar_path}")
@@ -340,7 +319,7 @@ except Exception as e:
     exit()
 
 # ====================================================================================================
-# BAGIAN 3: PENGIRIMAN EMAIL (MODIFIKASI FINAL)
+# BAGIAN 3: PENGIRIMAN EMAIL (TIDAK ADA PERUBAHAN LOGIKA, HANYA PATH VARIABEL)
 # ====================================================================================================
 
 def attach_file_to_email(msg, file_path, file_type='image'):
@@ -350,10 +329,6 @@ def attach_file_to_email(msg, file_path, file_type='image'):
         return
 
     try:
-        from email.mime.base import MIMEBase
-        from email import encoders
-        from email.mime.image import MIMEImage
-
         with open(file_path, "rb") as attachment:
             filename = os.path.basename(file_path)
             
@@ -378,7 +353,7 @@ def attach_file_to_email(msg, file_path, file_type='image'):
 def send_email_with_attachments(image_path, csv_path):
     
     # ===========================================================================
-    # KONFIGURASI EMAIL (Menggunakan konfigurasi dari skrip Anda)
+    # KONFIGURASI EMAIL
     # ===========================================================================
     smtp_server = "smtp.gmail.com"
     port = 587
@@ -398,7 +373,6 @@ def send_email_with_attachments(image_path, csv_path):
     msg.attach(MIMEText(body, 'plain'))
 
     # --- MELAMPIRKAN FILE ---
-    # Menggunakan path relatif/portable yang baru
     attach_file_to_email(msg, image_path, file_type='image')
     attach_file_to_email(msg, csv_path, file_type='csv')
     
