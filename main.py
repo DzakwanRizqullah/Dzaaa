@@ -1,6 +1,6 @@
 #====================================================================================================#
 #                                       Script Created By Penelitian ITMK 2022 K                             #
-#       (KONSOLIDASI & JALUR RELATIF UNTUK GITHUB)                                                    #
+#       (MODIFIKASI: JALUR ABSOLUT D:\... DIUBAH KE JALUR RELATIF PADA FOLDER 'output/')              #
 #====================================================================================================#
 
 import requests
@@ -17,10 +17,10 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from datetime import datetime
 from email.mime.base import MIMEBase
-from email import encoders # Perlu diimport untuk MIMEBase dan encoders
+from email import encoders
 
 # ====================================================================================================
-# BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON (JALUR DISESUAIKAN)
+# BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON
 # ====================================================================================================
 
 print("--- Memulai Pengambilan Data BMKG ---")
@@ -40,8 +40,8 @@ except requests.exceptions.RequestException as e:
     print(f"❌ Gagal mengambil data dari API BMKG: {e}")
     exit() 
 
-# --- JALUR OUTPUT RELATIF (GITHUB) ---
-# Folder 'output' berada di direktori yang sama dengan skrip ini
+# --- JALUR OUTPUT DISESUAIKAN UNTUK GITHUB/RELATIF ---
+# Menetapkan output_dir sebagai 'output' relatif terhadap skrip
 output_dir = os.path.join(os.getcwd(), "output")
 icon_dir = os.path.join(output_dir, "ikon_cuaca")
 csv_path = os.path.join(output_dir, "prakiraan_cuaca.csv")
@@ -109,7 +109,7 @@ with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
 
 print(f"\n✅ File prakiraan_cuaca.csv berhasil dibuat di: {csv_path}")
 
-
+---
 # ====================================================================================================
 # BAGIAN 2: PEMBUATAN GAMBAR INFOGRAFIS DARI DATA CSV
 # ====================================================================================================
@@ -169,7 +169,8 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
             pass
 
 # Siapkan gambar & font
-template_path = os.path.join(output_dir, "3.png") # JALUR RELATIF
+# JALUR TEMPLATE 3.PNG DISESUAIKAN: Sekarang mencari di dalam output_dir
+template_path = os.path.join(output_dir, "3.png") 
 if not os.path.exists(template_path):
     print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Tidak bisa membuat gambar.")
     exit()
@@ -178,7 +179,8 @@ try:
     img = Image.open(template_path).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    font_path = "C:/Windows/Fonts/Bahnschrift.ttf"
+    # Font Path umum di Windows, mungkin perlu disesuaikan atau dihapus jika dijalankan di Linux/container
+    font_path = "C:/Windows/Fonts/Bahnschrift.ttf" 
     font = ImageFont.truetype(font_path, 34) if os.path.exists(font_path) else ImageFont.load_default()
 
     ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") # JALUR RELATIF
@@ -186,7 +188,7 @@ except Exception as e:
     print(f"❌ Gagal memuat template gambar/font: {e}")
     exit()
 
-# Data posisi (tetap sama dengan skrip asli Anda)
+# Data posisi (logika plotting asli Anda)
 data = [
     {"x": 150, "y": 390, "cell": (0, "Tanggal")},
     {"x": 350, "y": 390, "cell": (0, "Jam")},
@@ -231,9 +233,7 @@ for item in data:
     x, y = item["x"], item["y"]
     baris, kolom = item["cell"]
     
-    # Pastikan data untuk baris tersebut ada sebelum mencoba mengaksesnya
-    if baris >= len(df):
-        continue # Lewati jika indeks di luar batas
+    if baris >= len(df): continue
 
     teks = ambil_nilai(df, baris, kolom)
 
@@ -244,17 +244,15 @@ for item in data:
         arah_angin = ambil_nilai(df, baris, "Arah Angin (°)")
         try:
             angle = float(arah_angin)
-            # x-80 adalah posisi Ikon Arah Angin
             paste_rotated_icon(img, ikon_arah_path, (x - 80, y + 10), angle) 
         except ValueError:
             pass
 
     if "File Ikon" in kolom:
-        # x dan y adalah posisi Ikon Cuaca
         paste_ikon_cuaca(img, icon_dir, (x, y), teks)
 
-# Simpan Gambar (JALUR DISESUAIKAN)
-output_gambar_path = os.path.join(output_dir, "infografis_prakiraan_cuaca.png")
+# Simpan Gambar (JALUR OUTPUT AKHIR DISESUAIKAN)
+output_gambar_path = os.path.join(output_dir, "PrakicuITM.png")
 
 try:
     img.save(output_gambar_path)
@@ -263,8 +261,9 @@ except Exception as e:
     print(f"❌ Gagal menyimpan gambar: {e}")
     exit()
 
+---
 # ====================================================================================================
-# BAGIAN 3: PENGIRIMAN EMAIL 
+# BAGIAN 3: PENGIRIMAN EMAIL
 # ====================================================================================================
 
 def attach_file_to_email(msg, file_path, file_type='image'):
@@ -303,7 +302,7 @@ def send_email_with_attachments(image_path, csv_path):
     smtp_server = "smtp.gmail.com"
     port = 587
     sender_email = "dzaa5th@gmail.com"
-    password = "necb noft kvfg dxei" # GANTI DENGAN KATA SANDI APLIKASI
+    password = "necb noft kvfg dxei" # Pastikan ini adalah APP PASSWORD yang valid
     recipient_email = "mulmeditmstmkg@gmail.com"
     
     # Membuat pesan email
