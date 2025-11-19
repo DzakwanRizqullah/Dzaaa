@@ -1,6 +1,6 @@
 #====================================================================================================#
 #                                       Script Created By Penelitian ITMK 2022 K                             #
-#       (MODIFIKASI: PEMBERSHIAN KARAKTER U+00A0 & PENGGUNAAN JALUR RELATIF)                          #
+#       (VERSI FINAL BERSIH: Fokus pada konsistensi sintaks dan jalur relatif)                        #
 #====================================================================================================#
 
 import requests
@@ -9,15 +9,15 @@ import os
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-# Modul tambahan untuk email
+# Modul untuk Email
 import smtplib
 import ssl
+from datetime import datetime
+from email import encoders 
+from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-from datetime import datetime
-from email.mime.base import MIMEBase
-from email import encoders # Perlu diimpor untuk MIMEBase
 
 # ====================================================================================================
 # BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON (JALUR RELATIF)
@@ -168,7 +168,6 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
             pass
 
 # Siapkan gambar & font
-# JALUR TEMPLATE 3.PNG HARUS ADA DI FOLDER 'output/'
 template_path = os.path.join(output_dir, "3.png")
 if not os.path.exists(template_path):
     print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Pastikan file ini ada di folder 'output/'.")
@@ -179,8 +178,8 @@ try:
     draw = ImageDraw.Draw(img)
 
     # Catatan: Font Windows ('Bahnschrift.ttf') kemungkinan tidak ada di lingkungan GitHub Actions (Linux).
-    # Sebaiknya gunakan font default (ImageFont.load_default()) di lingkungan non-Windows.
     font_path = "C:/Windows/Fonts/Bahnschrift.ttf" 
+    # Fallback ke default font jika font Windows tidak ditemukan
     font = ImageFont.truetype(font_path, 34) if os.path.exists(font_path) else ImageFont.load_default()
 
     ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") # Mencari di 'output/ikon_cuaca/'
@@ -255,13 +254,13 @@ for item in data:
 output_gambar_path = os.path.join(output_dir, "PrakicuITM.png")
 
 try:
-    # Memastikan folder output sudah ada (sudah dilakukan di Bagian 1, tapi untuk safety)
     os.makedirs(os.path.dirname(output_gambar_path), exist_ok=True) 
     img.save(output_gambar_path)
     print(f"\n✅ Gambar prakiraan selesai dan disimpan di: {output_gambar_path}")
 except Exception as e:
     print(f"❌ Gagal menyimpan gambar: {e}")
-    exit()
+    # Jika gagal menyimpan gambar, kita tetap lanjutkan ke email jika CSV/Path sudah benar
+    pass
 
 ---
 # ====================================================================================================
