@@ -1,13 +1,17 @@
 name: Prakiraan Cuaca Harian Otomatis
 
+# Kontrol kapan workflow ini akan berjalan
 on:
+  # 1. Jadwal otomatis harian (Setiap hari pukul 23:15 UTC = 06:15 WIB)
   schedule:
+    # Format Cron: (menit jam hari_bulan bulan hari_minggu)
     - cron: '15 23 * * *'  
     
+  # 2. Pemicu manual (untuk tes)
   workflow_dispatch:         
 
 jobs:
-  run-script:
+  run-prakicu-script:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,19 +23,23 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dependencies
+      - name: Install dependencies (requests, pandas, Pillow)
+        # Asumsi Anda punya file requirements.txt
         run: pip install -r requirements.txt
 
-      - name: Jalankan skrip prakiraan dan Kirim Email
-        run: python prakicu_github.py
+      - name: Jalankan skrip prakicu_github.py
+        # Perintah ini menjalankan skrip Python Anda
+        run: python prakicu_github.py 
         env:
+          # Meneruskan GitHub Secrets untuk kredensial email (Wajib diatur)
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
 
       - name: Commit hasil gambar ke repository
+        # Menyimpan gambar output_data/PrakicuITM.png kembali ke repo
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'Update Prakiraan Cuaca Harian'
+          commit_message: 'Update Prakiraan Cuaca Harian Otomatis'
           files: 'output_data/PrakicuITM.png' 
-          branch: main
+          branch: main # Ganti jika Anda menggunakan branch selain 'main'
