@@ -1,22 +1,15 @@
 name: Prakiraan Cuaca Harian Otomatis
 
-# Kontrol kapan workflow ini akan berjalan
 on:
-  # 1. Jadwal otomatis (setiap hari pukul 06:15 WIB / 23:15 UTC)
   schedule:
-    # Baris 5: Indentasi yang benar (4 spasi sebelum '-')
-    - cron: '15 23 * * *'  
-    
-  # 2. Pemicu manual (tombol 'Run workflow')
-  workflow_dispatch:         
+    - cron: '15 23 * * *'   # Baris 5
 
-# Definisi Jobs
+  workflow_dispatch:         # Baris 7 (Pastikan 2 spasi di depan!)
+
 jobs:
   run-script:
-    # Menjalankan di server virtual Ubuntu (Linux)
     runs-on: ubuntu-latest
 
-    # Langkah-langkah yang akan dieksekusi
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,20 +20,16 @@ jobs:
           python-version: '3.x'
 
       - name: Install dependencies
-        # Pastikan file requirements.txt ada dan sudah di-commit
         run: pip install -r requirements.txt
 
       - name: Jalankan skrip prakiraan dan Kirim Email
-        # Perintah untuk menjalankan file Python yang sudah dimodifikasi
         run: python prakicu_github.py
         env:
-          # Meneruskan GitHub Secrets untuk kredensial email
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
 
       - name: Commit hasil gambar ke repository
-        # Menyimpan gambar hasil output kembali ke repository
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'Update Prakiraan Cuaca Harian'
