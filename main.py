@@ -1,15 +1,3 @@
-Tentu. Saya akan memperbaiki masalah font dan masalah penanganan *path* untuk gambar template (`3.png`) dan ikon arah angin agar konsisten dengan struktur folder yang Anda sebutkan (`ikon_cuaca` di dalam `output_dir`) dan menggunakan GitHub Action/lingkungan eksekusi yang lebih fleksibel.
-
-### 📝 Ringkasan Perubahan:
-
-1.  **Variabel Font:** Menambahkan variabel `FONT_SIZE = 180` di awal.
-2.  **Pemuatan Font:** Menggunakan `FONT_SIZE` yang baru (`180`) untuk memastikan font kembali besar, dan memastikan penanganan *fallback* yang tepat.
-3.  **Path Gambar:** Mengganti path absolut (`ikon_arah_path` dan `template_path`) agar merujuk ke lokasi yang Anda tentukan (`output_dir` dan `icon_dir`).
-4.  **Koordinat Y:** Menyesuaikan koordinat `Y` agar teks yang lebih besar (`180`) tetap berada di tengah baris template.
-
-Berikut adalah skrip lengkapnya:
-
-```python
 #====================================================================================================================#
 #                                               Script Created By Penelitian ITMK 2022 K                             #
 #                                 (FIXED: FONT SIZE 180 & PATH LOKAL/GITHUB)                           #
@@ -32,22 +20,20 @@ from email import encoders
 from datetime import datetime
 
 # ====================================================================================================
-# KONFIGURASI PATH & FONT (Bagian yang Diubah/Ditambahkan)
+# KONFIGURASI PATH & FONT
 # ====================================================================================================
 
 # Folder output utama
 output_dir = r"D:\Prakiraan_Cuaca_STMKG"
 icon_dir = os.path.join(output_dir, "ikon_cuaca")
 csv_path = os.path.join(output_dir, "prakiraan_cuaca.csv")
-output_gambar_path = r"D:\Prakicu\PrakicuITM.png" # Path final gambar
+output_gambar_path = r"D:\Prakicu\PrakicuITM.png"
 
-# Path File Template dan Ikon Arah Angin (DISESUAIKAN)
-# Template 3.png berada di D:\Prakiraan_Cuaca_STMKG
+# Path File Template dan Ikon Arah Angin
 template_path = os.path.join(output_dir, "3.png") 
-# Ikon arah angin berada di D:\Prakiraan_Cuaca_STMKG\ikon_cuaca
 ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") 
 
-# ✅ FONT SIZE DITINGKATKAN KE 180
+# ✅ FONT SIZE BARU
 FONT_SIZE = 180 
 
 # ====================================================================================================
@@ -125,9 +111,8 @@ with open(csv_path, "w", newline="", encoding="utf-8") as csvfile:
                         if ikon_response.status_code == 200:
                             with open(ikon_path, "wb") as f:
                                 f.write(ikon_response.content)
-                            # print(f"✅ Ikon disimpan: {ikon_path}")
                     except requests.exceptions.RequestException:
-                        pass # Abaikan error download ikon
+                        pass 
             
             writer.writerow([
                 Tanggal, jam, cuaca, suhu, kelembapan, 
@@ -162,7 +147,6 @@ def ambil_nilai(df, baris, kolom):
 
 # Fungsi paste ikon arah angin (centered & tidak dibulatkan)
 def paste_rotated_icon(base_img, icon_path, center_position, angle):
-    # icon_path sudah diatur di luar fungsi: ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png")
     if os.path.exists(icon_path):
         try:
             ikon_img = Image.open(icon_path).convert("RGBA").resize((60, 60)) 
@@ -197,7 +181,6 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
              pass
 
 # Siapkan gambar & font
-# template_path sudah disesuaikan di bagian konfigurasi.
 if not os.path.exists(template_path):
     print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Tidak bisa membuat gambar.")
     exit()
@@ -206,63 +189,61 @@ try:
     img = Image.open(template_path).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
+    # Font Windows mungkin tidak ada di Linux/GitHub Actions, jadi menggunakan fallback
     font_path = "C:/Windows/Fonts/Bahnschrift.ttf"
-    # ✅ PERUBAHAN UTAMA: MENGGUNAKAN FONT_SIZE=180 YANG BARU DIDEFINISIKAN
     font = ImageFont.truetype(font_path, FONT_SIZE) if os.path.exists(font_path) else ImageFont.load_default()
 
-    # ikon_arah_path sudah disesuaikan di bagian konfigurasi.
 except Exception as e:
     print(f"❌ Gagal memuat template gambar/font: {e}")
     exit()
 
-# Data posisi (Koordinat Y disesuaikan untuk FONT_SIZE=180, bukan 34)
-# Penyesuaian Y sekitar -25 dari nilai awal agar teks berada di tengah baris
+# Data posisi (Koordinat Y disesuaikan untuk FONT_SIZE=180)
 data = [
-    # Header (Tidak diubah)
-    {"x": 150, "y": 390, "cell": (0, "Tanggal")},
-    {"x": 350, "y": 390, "cell": (0, "Jam")},
-    {"x": 730, "y": 390, "cell": (8, "Tanggal")},
-    {"x": 930, "y": 390, "cell": (8, "Jam")},
+    # Header 
+    {"x": 150, "y": 390, "cell": (0, "Tanggal")},
+    {"x": 350, "y": 390, "cell": (0, "Jam")},
+    {"x": 730, "y": 390, "cell": (8, "Tanggal")},
+    {"x": 930, "y": 390, "cell": (8, "Jam")},
     
     # Suhu (°C) - Y disesuaikan
-    {"x": 450, "y": 770, "cell": (0, "Suhu (°C)")}, 
-    {"x": 450, "y": 870, "cell": (1, "Suhu (°C)")},
-    {"x": 450, "y": 965, "cell": (2, "Suhu (°C)")},
-    {"x": 450, "y": 1065, "cell": (3, "Suhu (°C)")},
-    {"x": 450, "y": 1160, "cell": (4, "Suhu (°C)")},
-    {"x": 450, "y": 1260, "cell": (5, "Suhu (°C)")},
-    {"x": 450, "y": 1355, "cell": (6, "Suhu (°C)")},
-    {"x": 450, "y": 1455, "cell": (7, "Suhu (°C)")},
+    {"x": 450, "y": 770, "cell": (0, "Suhu (°C)")}, 
+    {"x": 450, "y": 870, "cell": (1, "Suhu (°C)")},
+    {"x": 450, "y": 965, "cell": (2, "Suhu (°C)")},
+    {"x": 450, "y": 1065, "cell": (3, "Suhu (°C)")},
+    {"x": 450, "y": 1160, "cell": (4, "Suhu (°C)")},
+    {"x": 450, "y": 1260, "cell": (5, "Suhu (°C)")},
+    {"x": 450, "y": 1355, "cell": (6, "Suhu (°C)")},
+    {"x": 450, "y": 1455, "cell": (7, "Suhu (°C)")},
     
     # Kelembapan (%) - Y disesuaikan
-    {"x": 620, "y": 770, "cell": (0, "Kelembapan (%)")},
-    {"x": 620, "y": 870, "cell": (1, "Kelembapan (%)")},
-    {"x": 620, "y": 965, "cell": (2, "Kelembapan (%)")},
-    {"x": 620, "y": 1065, "cell": (3, "Kelembapan (%)")},
-    {"x": 620, "y": 1160, "cell": (4, "Kelembapan (%)")},
-    {"x": 620, "y": 1260, "cell": (5, "Kelembapan (%)")},
-    {"x": 620, "y": 1355, "cell": (6, "Kelembapan (%)")},
-    {"x": 620, "y": 1455, "cell": (7, "Kelembapan (%)")},
+    {"x": 620, "y": 770, "cell": (0, "Kelembapan (%)")},
+    {"x": 620, "y": 870, "cell": (1, "Kelembapan (%)")},
+    {"x": 620, "y": 965, "cell": (2, "Kelembapan (%)")},
+    {"x": 620, "y": 1065, "cell": (3, "Kelembapan (%)")},
+    {"x": 620, "y": 1160, "cell": (4, "Kelembapan (%)")},
+    {"x": 620, "y": 1260, "cell": (5, "Kelembapan (%)")},
+    {"x": 620, "y": 1355, "cell": (6, "Kelembapan (%)")},
+    {"x": 620, "y": 1455, "cell": (7, "Kelembapan (%)")},
     
     # Kecepatan Angin (knots) - Y disesuaikan
-    {"x": 850, "y": 770, "cell": (0, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 867, "cell": (1, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 967, "cell": (2, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1062, "cell": (3, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1162, "cell": (4, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1260, "cell": (5, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1355, "cell": (6, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1455, "cell": (7, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 770, "cell": (0, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 867, "cell": (1, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 967, "cell": (2, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1062, "cell": (3, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1162, "cell": (4, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1260, "cell": (5, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1355, "cell": (6, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1455, "cell": (7, "Kecepatan Angin (knots)")},
     
     # Ikon Cuaca - Y disesuaikan
-    {"x": 320, "y": 755, "cell": (0, "File Ikon")},
-    {"x": 320, "y": 842, "cell": (1, "File Ikon")},
-    {"x": 320, "y": 942, "cell": (2, "File Ikon")},
-    {"x": 320, "y": 1040, "cell": (3, "File Ikon")},
-    {"x": 320, "y": 1140, "cell": (4, "File Ikon")},
-    {"x": 320, "y": 1240, "cell": (5, "File Ikon")},
-    {"x": 320, "y": 1333, "cell": (6, "File Ikon")},
-    {"x": 320, "y": 1431, "cell": (7, "File Ikon")},
+    {"x": 320, "y": 755, "cell": (0, "File Ikon")},
+    {"x": 320, "y": 842, "cell": (1, "File Ikon")},
+    {"x": 320, "y": 942, "cell": (2, "File Ikon")},
+    {"x": 320, "y": 1040, "cell": (3, "File Ikon")},
+    {"x": 320, "y": 1140, "cell": (4, "File Ikon")},
+    {"x": 320, "y": 1240, "cell": (5, "File Ikon")},
+    {"x": 320, "y": 1333, "cell": (6, "File Ikon")},
+    {"x": 320, "y": 1431, "cell": (7, "File Ikon")},
 ]
 
 # Plot
@@ -287,7 +268,7 @@ for item in data:
         try:
             angle = float(arah_angin)
             # Posisikan ikon arah angin agar sejajar dengan teks yang lebih besar (y + 25)
-            paste_rotated_icon(img, ikon_arah_path, (x - 80, y + 25), angle) # Y disesuaikan
+            paste_rotated_icon(img, ikon_arah_path, (x - 80, y + 25), angle) 
         except ValueError:
             pass
 
@@ -306,7 +287,7 @@ except Exception as e:
     exit()
 
 # ====================================================================================================
-# BAGIAN 3: PENGIRIMAN EMAIL (Kode ini tetap sama)
+# BAGIAN 3: PENGIRIMAN EMAIL
 # ====================================================================================================
 
 def attach_file_to_email(msg, file_path, file_type='image'):
@@ -323,10 +304,8 @@ def attach_file_to_email(msg, file_path, file_type='image'):
                 part = MIMEImage(attachment.read(), name=filename)
                 content_type = 'attachment'
             elif file_type == 'csv':
-                from email.mime.base import MIMEBase
                 part = MIMEBase('application', 'octet-stream')
                 part.set_payload(attachment.read())
-                from email import encoders
                 encoders.encode_base64(part)
                 content_type = 'attachment'
             else:
@@ -381,6 +360,4 @@ def send_email_with_attachments(image_path, csv_path):
         print(f"Error detail: {e}")
 
 # Panggil fungsi pengiriman email baru
-# Menggunakan variabel global csv_path dan output_gambar_path
 send_email_with_attachments(output_gambar_path, csv_path)
-```
