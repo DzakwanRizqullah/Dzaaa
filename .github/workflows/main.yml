@@ -26,7 +26,7 @@ jobs:
 
       - name: Jalankan skrip prakiraan dan Kirim Email
         # MEMANGGIL SKRIP PYTHON
-        run: python prakicu_github.py 
+        run: python main.py
         env:
           # Meneruskan GitHub Secrets
           EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
