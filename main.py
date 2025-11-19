@@ -29,7 +29,7 @@ icon_dir = os.path.join(output_dir, "ikon_cuaca")
 csv_path = os.path.join(output_dir, "prakiraan_cuaca.csv")
 output_gambar_path = r"D:\Prakicu\PrakicuITM.png"
 
-# Path File Template dan Ikon Arah Angin
+# PENTING: PASTIKAN FILE '3.png' ADA DI LOKASI INI: D:\Prakiraan_Cuaca_STMKG\3.png
 template_path = os.path.join(output_dir, "3.png") 
 ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") 
 
@@ -135,7 +135,7 @@ except Exception as e:
     print(f"❌ Gagal membaca file CSV untuk pembuatan gambar: {e}")
     exit()
 
-# Fungsi ambil nilai (TIDAK BERUBAH)
+# Fungsi ambil nilai 
 def ambil_nilai(df, baris, kolom):
     try:
         if kolom not in df.columns: return ""
@@ -145,7 +145,7 @@ def ambil_nilai(df, baris, kolom):
     except Exception:
         return ""
 
-# Fungsi paste ikon arah angin (TIDAK BERUBAH)
+# Fungsi paste ikon arah angin (centered & tidak dibulatkan)
 def paste_rotated_icon(base_img, icon_path, center_position, angle):
     if os.path.exists(icon_path):
         try:
@@ -159,7 +159,7 @@ def paste_rotated_icon(base_img, icon_path, center_position, angle):
         except Exception:
             pass
 
-# Fungsi paste ikon cuaca (TIDAK BERUBAH)
+# Fungsi paste ikon cuaca
 def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=100):
     ikon_filename = os.path.splitext(ikon_filename)[0] + ".png"
     ikon_path = os.path.join(ikon_dir, ikon_filename)
@@ -182,7 +182,9 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
 
 # Siapkan gambar & font
 if not os.path.exists(template_path):
-    print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Tidak bisa membuat gambar.")
+    # MENANGANI ERROR FILE TEMPLATE TIDAK DITEMUKAN
+    print(f"\n❌ Template Error: File template gambar '3.png' tidak ditemukan di: {template_path}.")
+    print(">>> Harap pastikan file '3.png' Anda terletak di direktori 'D:\Prakiraan_Cuaca_STMKG'. <<<")
     exit()
     
 try:
@@ -198,9 +200,8 @@ except Exception as e:
     exit()
 
 # Data posisi (KOORDINAT Y DISESUAIKAN DENGAN FONT_SIZE=180)
-# Koordinat X dipertahankan di posisi asli skrip Anda.
 data = [
-    # Header (Koordinat Y dipertahankan dari skrip yang diperbaiki)
+    # Header 
     {"x": 150, "y": 390, "cell": (0, "Tanggal")},
     {"x": 350, "y": 390, "cell": (0, "Jam")},
     {"x": 730, "y": 390, "cell": (8, "Tanggal")},
