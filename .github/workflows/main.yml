@@ -1,45 +1,25 @@
-name: Prakiraan Cuaca Harian Otomatis
+name: Prakiraan Cuaca Harian
 
-# Kontrol kapan workflow ini akan berjalan
 on:
-  # 1. Jadwal otomatis harian (Setiap hari pukul 23:15 UTC = 06:15 WIB)
   schedule:
-    # Format Cron: (menit jam hari_bulan bulan hari_minggu)
-    - cron: '15 23 * * *'  
-    
-  # 2. Pemicu manual (untuk tes)
-  workflow_dispatch:         
+    - cron: '08 05 * * *'  # 23:15 UTC = 06:15 WIB setiap hari
+  workflow_dispatch:        # Bisa juga dijalankan manual
 
 jobs:
-  run-prakicu-script:
+  run-script:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
-      - name: Install dependencies (requests, pandas, Pillow)
-        # Asumsi Anda punya file requirements.txt
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Jalankan skrip prakicu_github.py
-        # Perintah ini menjalankan skrip Python Anda
-        run: python prakicu_github.py 
-        env:
-          # Meneruskan GitHub Secrets untuk kredensial email (Wajib diatur)
-          EMAIL_SENDER: ${{ secrets.EMAIL_SENDER }}
-          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-          EMAIL_RECIPIENT: ${{ secrets.EMAIL_RECIPIENT }}
-
-      - name: Commit hasil gambar ke repository
-        # Menyimpan gambar output_data/PrakicuITM.png kembali ke repo
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'Update Prakiraan Cuaca Harian Otomatis'
-          files: 'output_data/PrakicuITM.png' 
-          branch: main # Ganti jika Anda menggunakan branch selain 'main'
+      - name: Jalankan skrip prakiraan
+        run: python main.py
