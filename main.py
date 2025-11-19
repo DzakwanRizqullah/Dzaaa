@@ -1,6 +1,6 @@
 #====================================================================================================================#
 #                                               Script Created By Penelitian ITMK 2022 K                             #
-#                                 (FIXED: FONT SIZE 180 & PATH LOKAL/GITHUB)                           #
+#                                 (VERSI GITHUB/FLEXIBLE PATH & FONT SIZE 90)                         #
 #====================================================================================================================#
 
 import requests
@@ -20,21 +20,25 @@ from email import encoders
 from datetime import datetime
 
 # ====================================================================================================
-# KONFIGURASI PATH & FONT
+# KONFIGURASI PATH & FONT (Diubah untuk fleksibilitas)
 # ====================================================================================================
 
-# Folder output utama
-output_dir = r"D:\Prakiraan_Cuaca_STMKG"
+# Menentukan BASE_DIR relatif dari lokasi script
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) 
+
+# Semua output diarahkan ke folder "output" (relatif)
+output_dir = os.path.join(BASE_DIR, "output")
 icon_dir = os.path.join(output_dir, "ikon_cuaca")
+
 csv_path = os.path.join(output_dir, "prakiraan_cuaca.csv")
-output_gambar_path = r"D:\Prakicu\PrakicuITM.png"
+output_gambar_path = os.path.join(output_dir, "PrakicuITM.png") # Path final gambar di folder output
 
 # Path File Template dan Ikon Arah Angin
-template_path = os.path.join(output_dir, "3.png") 
+template_path = os.path.join(output_dir, "3.png") # 3.png ada di folder output
 ikon_arah_path = os.path.join(icon_dir, "ikon_arah_angin.png") 
 
-# ✅ FONT SIZE BARU
-FONT_SIZE = 180 
+# Ukuran Font Disesuaikan untuk Infografis
+FONT_SIZE = 90 # Diubah dari 34 menjadi 90 (font default Pillow akan menyesuaikan)
 
 # ====================================================================================================
 # BAGIAN 1: PENGAMBILAN DATA BMKG, PENYIMPANAN CSV, DAN DOWNLOAD IKON
@@ -149,7 +153,8 @@ def ambil_nilai(df, baris, kolom):
 def paste_rotated_icon(base_img, icon_path, center_position, angle):
     if os.path.exists(icon_path):
         try:
-            ikon_img = Image.open(icon_path).convert("RGBA").resize((60, 60)) 
+            # Ukuran Ikon Angin lebih besar agar terlihat
+            ikon_img = Image.open(icon_path).convert("RGBA").resize((120, 120)) 
             ikon_img_rotated = ikon_img.rotate(-angle, expand=True, resample=Image.BICUBIC) 
             icon_w, icon_h = ikon_img_rotated.size
             center_x, center_y = center_position
@@ -160,14 +165,14 @@ def paste_rotated_icon(base_img, icon_path, center_position, angle):
              pass
 
 # Fungsi paste ikon cuaca
-def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=100):
+def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=200): # Ukuran Ikon default 200
     ikon_filename = os.path.splitext(ikon_filename)[0] + ".png"
     ikon_path = os.path.join(ikon_dir, ikon_filename)
 
     if os.path.exists(ikon_path):
         try:
             ikon_img = Image.open(ikon_path).convert("RGBA")
-            target_width = 130 if "hujan" in ikon_filename.lower() else default_width
+            target_width = 250 if "hujan" in ikon_filename.lower() else default_width
             offset_x = -15 if "hujan" in ikon_filename.lower() else 0
             offset_y = -10 if "hujan" in ikon_filename.lower() else 0
             
@@ -182,68 +187,70 @@ def paste_ikon_cuaca(base_img, ikon_dir, position, ikon_filename, default_width=
 
 # Siapkan gambar & font
 if not os.path.exists(template_path):
-    print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Tidak bisa membuat gambar.")
+    print(f"❌ File template gambar '3.png' tidak ditemukan di: {template_path}. Pastikan sudah ada di folder 'output'.")
     exit()
     
 try:
     img = Image.open(template_path).convert("RGBA")
     draw = ImageDraw.Draw(img)
 
-    # Font Windows mungkin tidak ada di Linux/GitHub Actions, jadi menggunakan fallback
-    font_path = "C:/Windows/Fonts/Bahnschrift.ttf"
-    font = ImageFont.truetype(font_path, FONT_SIZE) if os.path.exists(font_path) else ImageFont.load_default()
+    # Menggunakan font default Pillow jika font khusus tidak ditemukan (untuk kompatibilitas GitHub)
+    font = ImageFont.load_default(size=FONT_SIZE) 
 
 except Exception as e:
     print(f"❌ Gagal memuat template gambar/font: {e}")
     exit()
 
-# Data posisi (Koordinat Y disesuaikan untuk FONT_SIZE=180)
+# Data posisi (Koordinat Y disesuaikan untuk FONT_SIZE=90)
+# Penyesuaian Y sekitar -25 dari nilai awal agar teks berada di tengah baris
 data = [
-    # Header 
+    # Header (Teks ini kecil, jadi Y=390 dipertahankan jika fontnya kecil)
     {"x": 150, "y": 390, "cell": (0, "Tanggal")},
     {"x": 350, "y": 390, "cell": (0, "Jam")},
     {"x": 730, "y": 390, "cell": (8, "Tanggal")},
     {"x": 930, "y": 390, "cell": (8, "Jam")},
     
-    # Suhu (°C) - Y disesuaikan
-    {"x": 450, "y": 770, "cell": (0, "Suhu (°C)")}, 
-    {"x": 450, "y": 870, "cell": (1, "Suhu (°C)")},
-    {"x": 450, "y": 965, "cell": (2, "Suhu (°C)")},
-    {"x": 450, "y": 1065, "cell": (3, "Suhu (°C)")},
-    {"x": 450, "y": 1160, "cell": (4, "Suhu (°C)")},
-    {"x": 450, "y": 1260, "cell": (5, "Suhu (°C)")},
-    {"x": 450, "y": 1355, "cell": (6, "Suhu (°C)")},
-    {"x": 450, "y": 1455, "cell": (7, "Suhu (°C)")},
+    # Suhu (°C) - Y disesuaikan untuk FONT_SIZE=90
+    # Asumsi tinggi baris sekitar 95 piksel (misalnya: 895-795)
+    {"x": 450, "y": 780, "cell": (0, "Suhu (°C)")}, 
+    {"x": 450, "y": 880, "cell": (1, "Suhu (°C)")},
+    {"x": 450, "y": 975, "cell": (2, "Suhu (°C)")},
+    {"x": 450, "y": 1075, "cell": (3, "Suhu (°C)")},
+    {"x": 450, "y": 1170, "cell": (4, "Suhu (°C)")},
+    {"x": 450, "y": 1270, "cell": (5, "Suhu (°C)")},
+    {"x": 450, "y": 1365, "cell": (6, "Suhu (°C)")},
+    {"x": 450, "y": 1465, "cell": (7, "Suhu (°C)")},
     
     # Kelembapan (%) - Y disesuaikan
-    {"x": 620, "y": 770, "cell": (0, "Kelembapan (%)")},
-    {"x": 620, "y": 870, "cell": (1, "Kelembapan (%)")},
-    {"x": 620, "y": 965, "cell": (2, "Kelembapan (%)")},
-    {"x": 620, "y": 1065, "cell": (3, "Kelembapan (%)")},
-    {"x": 620, "y": 1160, "cell": (4, "Kelembapan (%)")},
-    {"x": 620, "y": 1260, "cell": (5, "Kelembapan (%)")},
-    {"x": 620, "y": 1355, "cell": (6, "Kelembapan (%)")},
-    {"x": 620, "y": 1455, "cell": (7, "Kelembapan (%)")},
+    {"x": 620, "y": 780, "cell": (0, "Kelembapan (%)")},
+    {"x": 620, "y": 880, "cell": (1, "Kelembapan (%)")},
+    {"x": 620, "y": 975, "cell": (2, "Kelembapan (%)")},
+    {"x": 620, "y": 1075, "cell": (3, "Kelembapan (%)")},
+    {"x": 620, "y": 1170, "cell": (4, "Kelembapan (%)")},
+    {"x": 620, "y": 1270, "cell": (5, "Kelembapan (%)")},
+    {"x": 620, "y": 1365, "cell": (6, "Kelembapan (%)")},
+    {"x": 620, "y": 1465, "cell": (7, "Kelembapan (%)")},
     
     # Kecepatan Angin (knots) - Y disesuaikan
-    {"x": 850, "y": 770, "cell": (0, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 867, "cell": (1, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 967, "cell": (2, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1062, "cell": (3, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1162, "cell": (4, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1260, "cell": (5, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1355, "cell": (6, "Kecepatan Angin (knots)")},
-    {"x": 850, "y": 1455, "cell": (7, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 780, "cell": (0, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 877, "cell": (1, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 977, "cell": (2, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1072, "cell": (3, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1172, "cell": (4, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1270, "cell": (5, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1365, "cell": (6, "Kecepatan Angin (knots)")},
+    {"x": 850, "y": 1465, "cell": (7, "Kecepatan Angin (knots)")},
     
     # Ikon Cuaca - Y disesuaikan
-    {"x": 320, "y": 755, "cell": (0, "File Ikon")},
-    {"x": 320, "y": 842, "cell": (1, "File Ikon")},
-    {"x": 320, "y": 942, "cell": (2, "File Ikon")},
-    {"x": 320, "y": 1040, "cell": (3, "File Ikon")},
-    {"x": 320, "y": 1140, "cell": (4, "File Ikon")},
-    {"x": 320, "y": 1240, "cell": (5, "File Ikon")},
-    {"x": 320, "y": 1333, "cell": (6, "File Ikon")},
-    {"x": 320, "y": 1431, "cell": (7, "File Ikon")},
+    # Posisikan Ikon agar berada di tengah vertikal baris tabel
+    {"x": 300, "y": 760, "cell": (0, "File Ikon")}, 
+    {"x": 300, "y": 860, "cell": (1, "File Ikon")},
+    {"x": 300, "y": 955, "cell": (2, "File Ikon")},
+    {"x": 300, "y": 1055, "cell": (3, "File Ikon")},
+    {"x": 300, "y": 1150, "cell": (4, "File Ikon")},
+    {"x": 300, "y": 1250, "cell": (5, "File Ikon")},
+    {"x": 300, "y": 1345, "cell": (6, "File Ikon")},
+    {"x": 300, "y": 1445, "cell": (7, "File Ikon")},
 ]
 
 # Plot
@@ -252,7 +259,7 @@ for item in data:
     baris, kolom = item["cell"]
     teks = ambil_nilai(df, baris, kolom)
 
-    # Logika penambahan satuan (untuk tampilan yang lebih baik)
+    # Logika penambahan satuan 
     if "Suhu (°C)" in kolom:
         teks += "°C"
     elif "Kelembapan (%)" in kolom:
@@ -267,17 +274,17 @@ for item in data:
         arah_angin = ambil_nilai(df, baris, "Arah Angin (°)")
         try:
             angle = float(arah_angin)
-            # Posisikan ikon arah angin agar sejajar dengan teks yang lebih besar (y + 25)
-            paste_rotated_icon(img, ikon_arah_path, (x - 80, y + 25), angle) 
+            # Posisikan ikon arah angin agar sejajar dengan teks
+            paste_rotated_icon(img, ikon_arah_path, (x - 120, y + 45), angle) # X disesuaikan
         except ValueError:
             pass
 
     if "File Ikon" in kolom:
-        paste_ikon_cuaca(img, icon_dir, (x, y), teks)
+        # Y disesuaikan agar ikon berada di tengah baris
+        paste_ikon_cuaca(img, icon_dir, (x, y - 40), teks)
 
 # Simpan Gambar
-output_gambar_dir = os.path.dirname(output_gambar_path)
-os.makedirs(output_gambar_dir, exist_ok=True) 
+os.makedirs(os.path.dirname(output_gambar_path), exist_ok=True) 
 
 try:
     img.save(output_gambar_path)
@@ -326,6 +333,7 @@ def send_email_with_attachments(image_path, csv_path):
     smtp_server = "smtp.gmail.com"
     port = 587
     sender_email = "dzaa5th@gmail.com"
+    # GANTI DENGAN KATA SANDI APLIKASI YANG VALID
     password = "necb noft kvfg dxei" 
     recipient_email = "mulmeditmstmkg@gmail.com"
     
